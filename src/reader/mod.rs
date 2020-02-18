@@ -71,7 +71,7 @@ mod tests {
     use super::*;
     #[test]
     fn dj38() {
-        let data = read(&"dj38.tsp").unwrap();
+        let data = read(&"instances/dj38.tsp").unwrap();
         let expected_node_coords = vec![
             NodeCoord::new(11003.611100, 42102.500000),
             NodeCoord::new(11108.611100, 42373.888900),
