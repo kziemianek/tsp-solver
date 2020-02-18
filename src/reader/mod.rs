@@ -39,7 +39,7 @@ impl std::str::FromStr for TspData {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut node_coords = Vec::<NodeCoord>::new();
-        let v: Vec<&str> = s.split("\n").collect();
+        let v: Vec<&str> = s.split('\n').collect();
         for l in &v {
             node_coords.push(parse_node_coord_section_line(l.to_owned().trim())?);
         }

@@ -58,7 +58,7 @@ impl metaheuristics::Metaheuristics<TspSolution> for TspInstance {
     }
 }
 
-fn calculate_travel_distance(city_order: &Vec<u32>, distance_matrix: &Vec<Vec<f32>>) -> f32 {
+fn calculate_travel_distance(city_order: &[u32], distance_matrix: &[Vec<f32>]) -> f32 {
     let mut score: f32 = 0.0;
     let first_city = *city_order.get(0).unwrap();
     let mut prev_city: u32 = first_city;
@@ -69,20 +69,19 @@ fn calculate_travel_distance(city_order: &Vec<u32>, distance_matrix: &Vec<Vec<f3
             .unwrap()
             .get(*city as usize)
             .unwrap();
-        score = score + dist;
+        score += dist;
         prev_city = city.to_owned();
     }
     // add distance from from last city to first
-    score = score
-        + distance_matrix
-            .get(prev_city as usize)
-            .unwrap()
-            .get(first_city as usize)
-            .unwrap();
+    score += distance_matrix
+        .get(prev_city as usize)
+        .unwrap()
+        .get(first_city as usize)
+        .unwrap();
     score
 }
 
-fn swap_cities(first_city: usize, second_city: usize, cities_order: &Vec<u32>) -> Vec<u32> {
+fn swap_cities(first_city: usize, second_city: usize, cities_order: &[u32]) -> Vec<u32> {
     let mut new_order = cities_order.to_owned();
     get_pairs_to_swap(first_city, second_city)
         .iter()
@@ -100,7 +99,7 @@ fn get_pairs_to_swap(first: usize, second: usize) -> Vec<(usize, usize)> {
     // . . 2 3 . . 6 7 . . [(2,7), (3,6)]
     // . . 2 3 4 5 6 7 . . [(2,7), (3,6), (4,5)]
     let pairs_to_swap_count: usize = (((larger - smaller) / 2) as f64).floor() as usize;
-    let pairs_to_swap: Vec<(usize, usize)> = (0..(pairs_to_swap_count + 1))
+    let pairs_to_swap: Vec<(usize, usize)> = (0..=pairs_to_swap_count)
         .map(|x| ((smaller + x), (larger - x)))
         .collect();
     pairs_to_swap
