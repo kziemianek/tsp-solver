@@ -8,3 +8,16 @@ Supported meta-heuristics:
 * random search
 
 Be sure to have sufficient memory to run large instances!
+
+
+## running
+
+`cargo run`
+
+## testing
+
+`cargo test`
+
+## linting
+
+`cargo fmt`
