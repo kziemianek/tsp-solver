@@ -90,17 +90,20 @@ fn swap_cities(first_city: usize, second_city: usize, cities_order: &[u32]) -> V
 }
 
 fn get_pairs_to_swap(first: usize, second: usize) -> Vec<(usize, usize)> {
-    let larger = if first > second { first } else { second };
-    let smaller = if first > second { second } else { first };
+    // 0 smaller 1 larger
+    let ordered = match first > second {
+        true => (second, first),
+        false => (first, second),
+    };
     // [0 1 2 3 4 5 6 7 8 9]
     // first: 7, second: 2
     // smaller: 2, larger: 7
     // . . 2 . . . . 7 . . [(2,7)]
     // . . 2 3 . . 6 7 . . [(2,7), (3,6)]
     // . . 2 3 4 5 6 7 . . [(2,7), (3,6), (4,5)]
-    let pairs_to_swap_count: usize = (((larger - smaller) / 2) as f64).floor() as usize;
+    let pairs_to_swap_count: usize = (((ordered.1 - ordered.0) / 2) as f64).floor() as usize;
     let pairs_to_swap: Vec<(usize, usize)> = (0..=pairs_to_swap_count)
-        .map(|x| ((smaller + x), (larger - x)))
+        .map(|x| ((ordered.0 + x), (ordered.1 - x)))
         .collect();
     pairs_to_swap
 }
@@ -138,7 +141,7 @@ mod tests {
             (3, 9),
             (4, 8),
             (5, 7),
-            // todo: we can ommit 6,6 pair as swapping them doesn't change result
+            // todo: we can omit 6,6 pair as swapping them doesn't change result
             (6, 6),
         ];
         assert_eq!(
@@ -167,7 +170,7 @@ mod tests {
             (3, 9),
             (4, 8),
             (5, 7),
-            // todo: we can ommit 6,6 pair as swapping them doesn't change result
+            // todo: we can omit 6,6 pair as swapping them doesn't change result
             (6, 6),
         ];
         assert_eq!(

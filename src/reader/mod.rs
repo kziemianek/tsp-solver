@@ -21,9 +21,10 @@ impl TspData {
     }
 
     pub fn generate_distance_matrix(&self) -> Vec<Vec<f32>> {
-        let mut distance_matrix: Vec<Vec<f32>> = Vec::new();
+        let nodes_number = self.node_coords.len();
+        let mut distance_matrix: Vec<Vec<f32>> = Vec::with_capacity(nodes_number);
         for coord in &self.node_coords {
-            let mut distances: Vec<f32> = Vec::new();
+            let mut distances: Vec<f32> = Vec::with_capacity(nodes_number);
             for coord2 in &self.node_coords {
                 let distance: f32 =
                     ((coord2.x - coord.x).powi(2) + (coord2.y - coord.y).powi(2)).sqrt() as f32;
@@ -38,12 +39,11 @@ impl TspData {
 impl std::str::FromStr for TspData {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut node_coords = Vec::<NodeCoord>::new();
-        let v: Vec<&str> = s.split('\n').collect();
-        for l in &v {
-            node_coords.push(parse_node_coord_section_line(l.to_owned().trim())?);
-        }
-        Ok(TspData::new(node_coords))
+        Ok(TspData::new(
+            s.split('\n')
+                .map(|s| parse_node_coord_section_line(s).unwrap())
+                .collect(),
+        ))
     }
 }
 
@@ -53,22 +53,25 @@ pub fn read(path: &str) -> Result<TspData, Box<dyn std::error::Error + 'static>>
 }
 
 fn parse_node_coord_section_line(line: &str) -> Result<NodeCoord, &'static str> {
-    let parsed_line: Vec<f32> = line
+    let mut parsed_line: Vec<f32> = line
         .split_whitespace()
         .map(|s| s.parse::<f32>().expect("Node coord must be numerical"))
         .collect();
-    if parsed_line.len() < 2 {
-        return Err("line too short");
-    }
-    Ok(NodeCoord::new(
-        parsed_line.get(0).unwrap().to_owned(),
-        parsed_line.get(1).unwrap().to_owned(),
-    ))
+
+    return match parsed_line.len() {
+        2 => {
+            let y = parsed_line.pop().unwrap();
+            let x = parsed_line.pop().unwrap();
+            Ok(NodeCoord::new(x, y))
+        }
+        _ => Err("line too short"),
+    };
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn dj38() {
         let data = read(&"instances/dj38.tsp").unwrap();
