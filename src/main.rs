@@ -3,7 +3,7 @@ fn main() {
 }
 
 mod cli {
-    use clap::{App, Arg};
+    use clap::{App, Arg, ArgMatches};
     use tspsolver::solve;
 
     pub fn start() {
@@ -55,31 +55,40 @@ mod cli {
                     .help("Sets parallel flag")
                     .takes_value(true)
                     .default_value(&"false"),
-            ).get_matches();
+            )
+            .get_matches();
 
-        let file = matches.value_of("file").unwrap().to_owned();
-        let computation_duration: i64 = matches
-            .value_of("duration")
-            .unwrap()
-            .to_owned()
-            .parse()
-            .unwrap();
-        let alg = matches.value_of("alg").unwrap().to_owned();
-        let runs: i32 = matches
-            .value_of("runs")
-            .unwrap()
-            .to_owned()
-            .parse()
-            .unwrap();
-        let parallel: bool = matches
-            .value_of("parallel")
-            .unwrap()
-            .to_owned()
-            .parse()
-            .unwrap();
+        let file = get_file(&matches);
+        let computation_duration: i64 = get_duration(&matches);
+        let alg = get_alg(&matches);
+        let runs: i32 = get_runs(&matches);
+        let parallel: bool = get_parallel(&matches);
         solve(&file, computation_duration, &alg, runs, parallel)
             .iter()
             .for_each(|solution| println!("Solution score {}", solution.travel_distance));
     }
 
+    fn get_file(matches: &ArgMatches) -> String {
+        get_argument(matches, "file")
+    }
+
+    fn get_duration(matches: &ArgMatches) -> i64 {
+        get_argument(matches, "duration").parse().unwrap()
+    }
+
+    fn get_alg(matches: &ArgMatches) -> String {
+        get_argument(matches, "alg")
+    }
+
+    fn get_runs(matches: &ArgMatches) -> i32 {
+        get_argument(&matches, "runs").parse().unwrap()
+    }
+
+    fn get_parallel(matches: &ArgMatches) -> bool {
+        get_argument(&matches, "parallel").parse().unwrap()
+    }
+
+    fn get_argument(matches: &ArgMatches, name: &str) -> String {
+        matches.value_of(name).unwrap().to_owned()
+    }
 }
