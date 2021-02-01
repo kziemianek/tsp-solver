@@ -53,9 +53,8 @@ mod cli {
                     .short("p")
                     .long("parallel")
                     .value_name("PARALLEL")
-                    .help("Sets parallel flag")
-                    .takes_value(true)
-                    .default_value(&"false"),
+                    .takes_value(false)
+                    .help("Sets parallel flag"),
             )
             .get_matches();
 
@@ -104,7 +103,7 @@ mod cli {
     }
 
     fn get_parallel(matches: &ArgMatches) -> bool {
-        get_argument(&matches, "parallel").parse().unwrap()
+        matches.is_present("parallel")
     }
 
     fn get_argument(matches: &ArgMatches, name: &str) -> String {
