@@ -1,3 +1,5 @@
+use std::{error, str};
+
 #[derive(Debug)]
 pub struct TspData {
     pub node_coords: Vec<NodeCoord>,
@@ -36,7 +38,7 @@ impl TspData {
     }
 }
 
-impl std::str::FromStr for TspData {
+impl str::FromStr for TspData {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(TspData::new(
@@ -47,7 +49,7 @@ impl std::str::FromStr for TspData {
     }
 }
 
-pub fn read(path: &str) -> Result<TspData, Box<dyn std::error::Error + 'static>> {
+pub fn read(path: &str) -> Result<TspData, Box<dyn error::Error + 'static>> {
     let data: TspData = std::fs::read_to_string(path)?.parse()?;
     Ok(data)
 }
