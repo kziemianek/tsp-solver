@@ -3,7 +3,7 @@ use time::Duration;
 
 mod cli;
 mod reader;
-pub mod solver;
+mod solver;
 
 pub fn start() {
     let matches = cli::start().get_matches();
