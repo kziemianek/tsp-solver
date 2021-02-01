@@ -39,23 +39,27 @@ pub fn solve(
 }
 
 fn perform(alg: &str, path: &str, computation_time: i64) -> Result<solver::TspSolution, String> {
-    let data = reader::read(path).unwrap();
-    let distance_matrix = data.generate_distance_matrix();
-    let mut instance = solver::TspInstance::new(distance_matrix);
-    match alg {
-        "hill-climbing" => Result::Ok(metaheuristics::hill_climbing::solve(
-            &mut instance,
-            Duration::seconds(computation_time),
-        )),
-        "simulated-annealing" => Result::Ok(metaheuristics::simulated_annealing::solve(
-            &mut instance,
-            Duration::seconds(computation_time),
-        )),
-        "random-search" => Result::Ok(metaheuristics::random_search::solve(
-            &mut instance,
-            Duration::seconds(computation_time),
-        )),
-        _ => Result::Err("Unknown alg!".to_owned()),
+    match reader::read(path) {
+        Ok(data) => {
+            let distance_matrix = data.generate_distance_matrix();
+            let mut instance = solver::TspInstance::new(distance_matrix);
+            match alg {
+                "hill-climbing" => Result::Ok(metaheuristics::hill_climbing::solve(
+                    &mut instance,
+                    Duration::seconds(computation_time),
+                )),
+                "simulated-annealing" => Result::Ok(metaheuristics::simulated_annealing::solve(
+                    &mut instance,
+                    Duration::seconds(computation_time),
+                )),
+                "random-search" => Result::Ok(metaheuristics::random_search::solve(
+                    &mut instance,
+                    Duration::seconds(computation_time),
+                )),
+                _ => Result::Err("Unknown alg!".to_owned()),
+            }
+        }
+        Err(v) => Result::Err(v.to_string()),
     }
 }
 
