@@ -39,33 +39,24 @@ pub fn solve(
 }
 
 fn perform(alg: &str, path: &str, computation_time: i64) -> Result<solver::TspSolution, String> {
+    let data = reader::read(path).unwrap();
+    let distance_matrix = data.generate_distance_matrix();
+    let mut instance = solver::TspInstance::new(distance_matrix);
     match alg {
-        "hill-climbing" => Result::Ok(hill_climbing(path, computation_time)),
-        "simulated-annealing" => Result::Ok(simulated_annealing(path, computation_time)),
-        "random-search" => Result::Ok(random_search(path, computation_time)),
+        "hill-climbing" => Result::Ok(metaheuristics::hill_climbing::solve(
+            &mut instance,
+            Duration::seconds(computation_time),
+        )),
+        "simulated-annealing" => Result::Ok(metaheuristics::simulated_annealing::solve(
+            &mut instance,
+            Duration::seconds(computation_time),
+        )),
+        "random-search" => Result::Ok(metaheuristics::random_search::solve(
+            &mut instance,
+            Duration::seconds(computation_time),
+        )),
         _ => Result::Err("Unknown alg!".to_owned()),
     }
-}
-
-fn hill_climbing(path: &str, computation_time: i64) -> solver::TspSolution {
-    let data = reader::read(path).unwrap();
-    let distance_matrix = data.generate_distance_matrix();
-    let mut instance = solver::TspInstance::new(distance_matrix);
-    metaheuristics::hill_climbing::solve(&mut instance, Duration::seconds(computation_time))
-}
-
-fn simulated_annealing(path: &str, computation_time: i64) -> solver::TspSolution {
-    let data = reader::read(path).unwrap();
-    let distance_matrix = data.generate_distance_matrix();
-    let mut instance = solver::TspInstance::new(distance_matrix);
-    metaheuristics::simulated_annealing::solve(&mut instance, Duration::seconds(computation_time))
-}
-
-fn random_search(path: &str, computation_time: i64) -> solver::TspSolution {
-    let data = reader::read(path).unwrap();
-    let distance_matrix = data.generate_distance_matrix();
-    let mut instance = solver::TspInstance::new(distance_matrix);
-    metaheuristics::random_search::solve(&mut instance, Duration::seconds(computation_time))
 }
 
 fn generate_iterations_queue(runs: i32, cpus: i32) -> Vec<i32> {
