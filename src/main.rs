@@ -4,6 +4,7 @@ fn main() {
 
 mod cli {
     use clap::{App, Arg, ArgMatches};
+    use std::cmp::Ordering::Equal;
     use tspsolver::solve;
 
     pub fn start() {
@@ -59,16 +60,31 @@ mod cli {
             .get_matches();
 
         let file = get_file(&matches);
-        let computation_duration: i64 = get_duration(&matches);
+        let computation_duration = get_duration(&matches);
         let alg = get_alg(&matches);
-        let runs: i32 = get_runs(&matches);
-        let parallel: bool = get_parallel(&matches);
-        solve(&file, computation_duration, &alg, runs, parallel)
+        let runs = get_runs(&matches);
+        let parallel = get_parallel(&matches);
+        let result = solve(&file, computation_duration, &alg, runs, parallel);
+
+        for (i, result) in result.iter().enumerate() {
+            match result {
+                Ok(v) => println!("#{} score {}", i + 1, v.travel_distance),
+                Err(v) => println!("#{} could not solve problem, error: {}", i + 1, v),
+            }
+        }
+
+        let mut distances: Vec<f32> = result
             .iter()
-            .for_each(|result| match result {
-                Ok(v) => println!("Solution score {}", v.travel_distance),
-                Err(v) => println!("Could not solve problem, error: {}", v),
-            });
+            .filter(|result| result.is_ok())
+            .map(|result| result.as_ref())
+            .map(|result| result.unwrap())
+            .map(|result| result.travel_distance)
+            .collect();
+        distances.sort_by(|a, b| a.partial_cmp(b).unwrap_or(Equal));
+        match distances.len() > 0 {
+            true => println!("Best score {}", distances.get(0).unwrap()),
+            false => {}
+        }
     }
 
     fn get_file(matches: &ArgMatches) -> String {
