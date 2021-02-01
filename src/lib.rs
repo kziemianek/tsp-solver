@@ -1,40 +1,10 @@
 use std::thread;
 use time::Duration;
 
-mod cli;
 mod reader;
 mod solver;
 
-pub fn start() {
-    let matches = cli::start().get_matches();
-    let file = matches.value_of("file").unwrap().to_owned();
-    let computation_duration: i64 = matches
-        .value_of("duration")
-        .unwrap()
-        .to_owned()
-        .parse()
-        .unwrap();
-    let alg = matches.value_of("alg").unwrap().to_owned();
-    let runs: i32 = matches
-        .value_of("runs")
-        .unwrap()
-        .to_owned()
-        .parse()
-        .unwrap();
-    let parallel: bool = matches
-        .value_of("parallel")
-        .unwrap()
-        .to_owned()
-        .parse()
-        .unwrap();
-
-    let solutions = solve(&file, computation_duration, &alg, runs, parallel);
-    solutions
-        .iter()
-        .for_each(|solution| println!("Solution score {}", solution.travel_distance));
-}
-
-fn solve(
+pub fn solve(
     path: &str,
     duration: i64,
     alg: &str,
