@@ -10,8 +10,8 @@ pub fn solve(
     alg: &str,
     runs: i32,
     parallel: bool,
-) -> Vec<solver::TspSolution> {
-    let mut solutions: Vec<solver::TspSolution> = vec![];
+) -> Vec<Result<solver::TspSolution, String>> {
+    let mut solutions: Vec<Result<solver::TspSolution, String>> = vec![];
     if parallel {
         let cpus: i32 = num_cpus::get() as i32;
         generate_iterations_queue(runs, cpus)
@@ -21,28 +21,30 @@ pub fn solve(
                 for _ in 0..*iteration_runs {
                     let alg = alg.to_owned();
                     let path = path.to_owned();
-                    joins.push(thread::spawn(move || match alg.to_owned().as_str() {
-                        "hill-climbing" => hill_climbing(&path, duration),
-                        "simulated-annealing" => simulated_annealing(&path, duration),
-                        "random-search" => random_search(&path, duration),
-                        _ => panic!("Unknown alg!"),
-                    }));
+                    joins.push(thread::spawn(move || perform(&alg, &path, duration)));
                 }
                 for join in joins {
-                    solutions.push(join.join().unwrap());
+                    match join.join() {
+                        Ok(v) => solutions.push(v),
+                        _ => solutions.push(Result::Err("Computation error...".to_owned())),
+                    }
                 }
             });
     } else {
         for _x in 0..runs {
-            match alg {
-                "hill-climbing" => solutions.push(hill_climbing(path, duration)),
-                "simulated-annealing" => solutions.push(simulated_annealing(path, duration)),
-                "random-search" => solutions.push(random_search(path, duration)),
-                _ => panic!("Unknown alg!"),
-            }
+            solutions.push(perform(alg, path, duration));
         }
     }
     solutions
+}
+
+fn perform(alg: &str, path: &str, computation_time: i64) -> Result<solver::TspSolution, String> {
+    match alg {
+        "hill-climbing" => Result::Ok(hill_climbing(path, computation_time)),
+        "simulated-annealing" => Result::Ok(simulated_annealing(path, computation_time)),
+        "random-search" => Result::Ok(random_search(path, computation_time)),
+        _ => Result::Err("Unknown alg!".to_owned()),
+    }
 }
 
 fn hill_climbing(path: &str, computation_time: i64) -> solver::TspSolution {

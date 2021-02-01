@@ -65,7 +65,10 @@ mod cli {
         let parallel: bool = get_parallel(&matches);
         solve(&file, computation_duration, &alg, runs, parallel)
             .iter()
-            .for_each(|solution| println!("Solution score {}", solution.travel_distance));
+            .for_each(|result| match result {
+                Ok(v) => println!("Solution score {}", v.travel_distance),
+                Err(v) => println!("Could not solve problem, error: {}", v),
+            });
     }
 
     fn get_file(matches: &ArgMatches) -> String {
