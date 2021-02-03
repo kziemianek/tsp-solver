@@ -6,6 +6,7 @@ mod cli {
     use clap::{App, Arg, ArgMatches};
     use std::cmp::Ordering::Equal;
     use tspsolver::solve;
+    use rust_decimal::Decimal;
 
     pub fn start() {
         let matches = App::new("tsp-solver")
@@ -72,7 +73,7 @@ mod cli {
             }
         }
 
-        let mut distances: Vec<f32> = result
+        let mut distances: Vec<Decimal> = result
             .iter()
             .filter(|result| result.is_ok())
             .map(|result| result.as_ref())

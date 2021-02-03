@@ -4,14 +4,17 @@ use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rand::Rng;
+use pathfinding;
+use rust_decimal::Decimal;
+use rust_decimal::prelude::{ToPrimitive, FromStr};
 
 pub struct TspSolution {
     pub city_order: Vec<u32>,
-    pub travel_distance: f32,
+    pub travel_distance: Decimal,
 }
 
 impl TspSolution {
-    fn new(city_order: Vec<u32>, travel_distance: f32) -> TspSolution {
+    fn new(city_order: Vec<u32>, travel_distance: Decimal) -> TspSolution {
         TspSolution {
             city_order,
             travel_distance,
@@ -19,24 +22,47 @@ impl TspSolution {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Node {
-    pub x: f32,
-    pub y: f32,
+    pub index: u32,
+    pub x: Decimal,
+    pub y: Decimal,
 }
 
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub struct NodeTuple(Decimal, Decimal, Vec<Node>, u32, Vec<Vec<Decimal>>);
+
+
+impl NodeTuple {
+    fn neighbours(&self) -> Vec<(NodeTuple, Decimal)> {
+        self.2.iter()
+            .filter(|node| !node.x.eq(&self.0) && !node.y.eq(&self.1))
+            .map(|node| (NodeTuple(node.x, node.y, self.2.to_vec(), node.index, self.4.to_vec()), self.4.get((node.index-1) as usize).unwrap().get((self.3-1) as usize).unwrap().clone()))
+            .collect()
+    }
+}
+
+
 impl Node {
-    pub fn new(x: f32, y: f32) -> Node {
-        Node { x, y }
+    pub fn new(index: u32, x: Decimal, y: Decimal) -> Node {
+        Node { index, x, y }
     }
-    pub fn distance_to(&self, node: &Node) -> f32 {
-        ((node.x - &self.x).powi(2) + (node.y - &self.y).powi(2)).sqrt() as f32
+    pub fn distance_to(&self, node: &Node) -> Decimal {
+        (((node.x - &self.x).powi(2) + (node.y - &self.y).powi(2)).sqrt()).unwrap()
     }
+}
+
+
+#[allow(dead_code)]
+enum InitialSolutionGenerationAlgorithm {
+    SHUFFLE,
+    DIJKSTRA,
 }
 
 pub struct TspInstance {
-    pub distance_matrix: Vec<Vec<f32>>,
+    pub distance_matrix: Vec<Vec<Decimal>>,
     pub rng: ThreadRng,
+    pub nodes: Vec<Node>
 }
 
 impl TspInstance {
@@ -46,14 +72,15 @@ impl TspInstance {
         TspInstance {
             distance_matrix,
             rng,
+            nodes
         }
     }
 
-    fn generate_distance_matrix(nodes: &Vec<Node>) -> Vec<Vec<f32>> {
+    fn generate_distance_matrix(nodes: &Vec<Node>) -> Vec<Vec<Decimal>> {
         let nodes_number = nodes.len();
-        let mut distance_matrix: Vec<Vec<f32>> = Vec::with_capacity(nodes_number);
+        let mut distance_matrix: Vec<Vec<Decimal>> = Vec::with_capacity(nodes_number);
         for node in nodes {
-            let mut distances: Vec<f32> = Vec::with_capacity(nodes_number);
+            let mut distances: Vec<Decimal> = Vec::with_capacity(nodes_number);
             for coord2 in nodes {
                 distances.push(node.distance_to(&coord2));
             }
@@ -70,13 +97,14 @@ impl metaheuristics::Metaheuristics<TspSolution> for TspInstance {
         TspSolution::new(city_order, travel_distance)
     }
     fn generate_candidate(&mut self) -> TspSolution {
-        let mut city_order: Vec<u32> = (0..self.distance_matrix.len()).map(|n| n as u32).collect();
-        city_order.shuffle(&mut self.rng);
+        let city_order = generate_initial_solution_city_order(self, InitialSolutionGenerationAlgorithm::DIJKSTRA);
         let travel_distance = calculate_travel_distance(&city_order, &self.distance_matrix);
         TspSolution::new(city_order, travel_distance)
     }
     fn rank_candidate(&mut self, solution: &TspSolution) -> f64 {
-        std::f64::MAX - solution.travel_distance as f64
+        // !println!("{}", solution.travel_distance.to_string());
+        // (Decimal::max_value() - solution.travel_distance).to_f64().unwrap()
+        solution.travel_distance.to_f64().unwrap()
     }
     fn tweak_candidate(&mut self, solution: &TspSolution) -> TspSolution {
         let first_city_index: usize = self.rng.gen_range(0, solution.city_order.len());
@@ -87,13 +115,32 @@ impl metaheuristics::Metaheuristics<TspSolution> for TspInstance {
     }
 }
 
-fn calculate_travel_distance(city_order: &[u32], distance_matrix: &[Vec<f32>]) -> f32 {
-    let mut score: f32 = 0.0;
+fn generate_initial_solution_city_order(instance: &mut TspInstance, algorithm: InitialSolutionGenerationAlgorithm) -> Vec<u32> {
+    match algorithm {
+        InitialSolutionGenerationAlgorithm::SHUFFLE => {
+            let mut city_order: Vec<u32> = (0..instance.distance_matrix.len())
+                .map(|n| n as u32)
+                .collect();
+            city_order.shuffle(&mut instance.rng);
+            city_order
+        },
+        InitialSolutionGenerationAlgorithm::DIJKSTRA => {
+            let nodes: Vec<NodeTuple> = instance.nodes.iter().map(|node| {
+                NodeTuple(node.x, node.y, instance.nodes.iter().filter(|&_node| !node.eq(_node)).map(|node| node.clone()).collect(), node.index, instance.distance_matrix.to_vec())
+            }).collect();
+            pathfinding::dijkstra(&nodes[0], |instance| instance.neighbours(),  |n| n == &nodes[0])
+                .unwrap().0.iter().map(|node| node.3-1).collect()
+        }
+    }
+}
+
+fn calculate_travel_distance(city_order: &[u32], distance_matrix: &[Vec<Decimal>]) -> Decimal {
+    let mut score: Decimal = Decimal::from_str("0.0").unwrap();
     let first_city = *city_order.get(0).unwrap();
     let mut prev_city: u32 = first_city;
     // sum up distances from cities
     for city in city_order {
-        let dist: &f32 = distance_matrix
+        let dist: &Decimal = distance_matrix
             .get(prev_city as usize)
             .unwrap()
             .get(*city as usize)
@@ -139,18 +186,21 @@ fn get_pairs_to_swap(first: usize, second: usize) -> Vec<(usize, usize)> {
 
 #[cfg(test)]
 mod tests {
+    use rust_decimal::Decimal;
+    use crate::solver::{TspInstance, Node};
+    use rust_decimal::prelude::FromStr;
 
     #[test]
     fn calculate_travel_distance_test() {
         let city_order = vec![1, 0, 2];
-        let distance_matrix: Vec<Vec<f32>> = vec![
-            vec![0.0, 3.9, 6.44],
-            vec![3.9, 0.0, 4.7],
-            vec![6.44, 4.7, 0.0],
+        let distance_matrix: Vec<Vec<Decimal>> = vec![
+            vec![Decimal::from_str("0.0").unwrap(), Decimal::from_str("3.9").unwrap(), Decimal::from_str("6.44").unwrap()],
+            vec![Decimal::from_str("3.9").unwrap(), Decimal::from_str("0.0").unwrap(), Decimal::from_str("4.7").unwrap()],
+            vec![Decimal::from_str("6.44").unwrap(), Decimal::from_str("4.7").unwrap(), Decimal::from_str("0.0").unwrap()],
         ];
 
         let rank = super::calculate_travel_distance(&city_order, &distance_matrix);
-        assert_eq!(rank, 15.04);
+        assert_eq!(rank, Decimal::from_str("15.04").unwrap());
     }
 
     #[test]
@@ -218,4 +268,20 @@ mod tests {
             super::get_pairs_to_swap(first_idx, second_idx)
         );
     }
+    //
+    // #[test]
+    // fn generate_initial_solution_city_order_test() {
+    //     let mut instance = TspInstance::new(vec![
+    //         Node::new(1,Decimal::from_str(11003.611100), Decimal::from_str(42102.500000)),
+    //         Node::new(2,Decimal::from_str(11108.611100), Decimal::from_str(42373.888900)),
+    //         Node::new(3, Decimal::from_str(11133.333300), Decimal::from_str(42885.833300))
+    //     ]);
+    //
+    //     assert_ne!(super::generate_initial_solution_city_order(&mut instance, super::InitialSolutionGenerationAlgorithm::DIJKSTRA), {})
+    //
+    //
+    //
+    // }
+
+
 }

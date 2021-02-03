@@ -18,3 +18,5 @@ rand = "0.7.3"
 clap = "2.33.0"
 time = { version = "0.1.30", default-features = false }
 num_cpus = "1.0"
+pathfinding = "0.1.16"
+rust_decimal = "1.10.1"
