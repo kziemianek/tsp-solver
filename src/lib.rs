@@ -41,8 +41,7 @@ pub fn solve(
 fn perform(alg: &str, path: &str, computation_time: i64) -> Result<solver::TspSolution, String> {
     match reader::read(path) {
         Ok(data) => {
-            let distance_matrix = data.generate_distance_matrix();
-            let mut instance = solver::TspInstance::new(distance_matrix);
+            let mut instance = solver::TspInstance::new(data.nodes);
             match alg {
                 "hill-climbing" => Result::Ok(metaheuristics::hill_climbing::solve(
                     &mut instance,

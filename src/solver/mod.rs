@@ -19,18 +19,47 @@ impl TspSolution {
     }
 }
 
+#[derive(Debug, PartialEq)]
+pub struct Node {
+    pub x: f32,
+    pub y: f32,
+}
+
+impl Node {
+    pub fn new(x: f32, y: f32) -> Node {
+        Node { x, y }
+    }
+    pub fn distance_to(&self, node: &Node) -> f32 {
+        ((node.x - &self.x).powi(2) + (node.y - &self.y).powi(2)).sqrt() as f32
+    }
+}
+
 pub struct TspInstance {
     pub distance_matrix: Vec<Vec<f32>>,
     pub rng: ThreadRng,
 }
 
 impl TspInstance {
-    pub fn new(distance_matrix: Vec<Vec<f32>>) -> TspInstance {
+    pub fn new(nodes: Vec<Node>) -> TspInstance {
         let rng = thread_rng();
+        let distance_matrix = TspInstance::generate_distance_matrix(&nodes);
         TspInstance {
             distance_matrix,
             rng,
         }
+    }
+
+    fn generate_distance_matrix(nodes: &Vec<Node>) -> Vec<Vec<f32>> {
+        let nodes_number = nodes.len();
+        let mut distance_matrix: Vec<Vec<f32>> = Vec::with_capacity(nodes_number);
+        for node in nodes {
+            let mut distances: Vec<f32> = Vec::with_capacity(nodes_number);
+            for coord2 in nodes {
+                distances.push(node.distance_to(&coord2));
+            }
+            distance_matrix.push(distances);
+        }
+        distance_matrix
     }
 }
 
