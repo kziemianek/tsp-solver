@@ -34,8 +34,11 @@ impl Node {
     }
 }
 
+
+type DistanceMatrix = Vec<Vec<f32>>;
+
 pub struct TspInstance {
-    pub distance_matrix: Vec<Vec<f32>>,
+    pub distance_matrix: DistanceMatrix,
     pub rng: ThreadRng,
 }
 
@@ -49,9 +52,9 @@ impl TspInstance {
         }
     }
 
-    fn generate_distance_matrix(nodes: &Vec<Node>) -> Vec<Vec<f32>> {
+    fn generate_distance_matrix(nodes: &Vec<Node>) -> DistanceMatrix {
         let nodes_number = nodes.len();
-        let mut distance_matrix: Vec<Vec<f32>> = Vec::with_capacity(nodes_number);
+        let mut distance_matrix: DistanceMatrix = Vec::with_capacity(nodes_number);
         for node in nodes {
             let mut distances: Vec<f32> = Vec::with_capacity(nodes_number);
             for coord2 in nodes {
@@ -139,11 +142,13 @@ fn get_pairs_to_swap(first: usize, second: usize) -> Vec<(usize, usize)> {
 
 #[cfg(test)]
 mod tests {
+    use crate::solver::DistanceMatrix;
+
 
     #[test]
     fn calculate_travel_distance_test() {
         let city_order = vec![1, 0, 2];
-        let distance_matrix: Vec<Vec<f32>> = vec![
+        let distance_matrix: DistanceMatrix = vec![
             vec![0.0, 3.9, 6.44],
             vec![3.9, 0.0, 4.7],
             vec![6.44, 4.7, 0.0],
