@@ -28,7 +28,7 @@ mod cli {
                     .value_name("DURATION")
                     .help("Sets computation duration in seconds")
                     .takes_value(true)
-                    .default_value(&"5"),
+                    .default_value("5"),
             )
             .arg(
                 Arg::with_name("alg")
@@ -37,7 +37,7 @@ mod cli {
                     .value_name("ALGORITHM")
                     .help("Sets meta-heuristics algorithm")
                     .takes_value(true)
-                    .default_value(&"hill-climbing"),
+                    .default_value("hill-climbing"),
             )
             .arg(
                 Arg::with_name("runs")
@@ -46,7 +46,7 @@ mod cli {
                     .value_name("RUNS")
                     .help("Sets number of alrogithm runs")
                     .takes_value(true)
-                    .default_value(&"1"),
+                    .default_value("1"),
             )
             .arg(
                 Arg::with_name("parallel")
@@ -80,7 +80,7 @@ mod cli {
             .map(|result| result.travel_distance)
             .collect();
         distances.sort_by(|a, b| a.partial_cmp(b).unwrap_or(Equal));
-        match distances.len() > 0 {
+        match !distances.is_empty() {
             true => println!("Best score {}", distances.get(0).unwrap()),
             false => {}
         }
@@ -99,7 +99,7 @@ mod cli {
     }
 
     fn get_runs(matches: &ArgMatches) -> i32 {
-        get_argument(&matches, "runs").parse().unwrap()
+        get_argument(matches, "runs").parse().unwrap()
     }
 
     fn get_parallel(matches: &ArgMatches) -> bool {

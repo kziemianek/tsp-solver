@@ -30,10 +30,9 @@ impl Node {
         Node { x, y }
     }
     pub fn distance_to(&self, node: &Node) -> f32 {
-        ((node.x - &self.x).powi(2) + (node.y - &self.y).powi(2)).sqrt() as f32
+        ((node.x - self.x).powi(2) + (node.y - self.y).powi(2)).sqrt() as f32
     }
 }
-
 
 type DistanceMatrix = Vec<Vec<f32>>;
 
@@ -52,13 +51,13 @@ impl TspInstance {
         }
     }
 
-    fn generate_distance_matrix(nodes: &Vec<Node>) -> DistanceMatrix {
+    fn generate_distance_matrix(nodes: &[Node]) -> DistanceMatrix {
         let nodes_number = nodes.len();
         let mut distance_matrix: DistanceMatrix = Vec::with_capacity(nodes_number);
         for node in nodes {
             let mut distances: Vec<f32> = Vec::with_capacity(nodes_number);
             for coord2 in nodes {
-                distances.push(node.distance_to(&coord2));
+                distances.push(node.distance_to(coord2));
             }
             distance_matrix.push(distances);
         }
@@ -143,7 +142,6 @@ fn get_pairs_to_swap(first: usize, second: usize) -> Vec<(usize, usize)> {
 #[cfg(test)]
 mod tests {
     use crate::solver::DistanceMatrix;
-
 
     #[test]
     fn calculate_travel_distance_test() {

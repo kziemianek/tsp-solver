@@ -4,6 +4,13 @@ use time::Duration;
 mod reader;
 mod solver;
 
+#[derive(Debug)]
+pub enum Error {
+    CoordLineTooShort,
+    InstanceFileNotFound,
+    UnparsableCoord,
+}
+
 pub fn solve(
     path: &str,
     duration: i64,
@@ -58,7 +65,7 @@ fn perform(alg: &str, path: &str, computation_time: i64) -> Result<solver::TspSo
                 _ => Result::Err("Unknown alg!".to_owned()),
             }
         }
-        Err(v) => Result::Err(v.to_string()),
+        Err(_) => Result::Err("Could not parse instance file".to_owned()),
     }
 }
 

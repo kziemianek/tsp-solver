@@ -1,5 +1,5 @@
-use crate::solver::Node;
-use std::{error, str};
+use crate::{solver::Node, Error};
+use std::str;
 
 #[derive(Debug)]
 pub struct TspData {
@@ -13,35 +13,43 @@ impl TspData {
 }
 
 impl str::FromStr for TspData {
-    type Err = String;
+    type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(TspData::new(
-            s.split('\n')
-                .map(|s| parse_node_coord_section_line(s).unwrap())
-                .collect(),
-        ))
+        let mut nodes: Vec<Node> = vec![];
+        for x in s.split('\n') {
+            let result = parse_node_coord_section_line(x);
+            nodes.push(result?);
+        }
+        Ok(TspData::new(nodes))
     }
 }
 
-pub fn read(path: &str) -> Result<TspData, Box<dyn error::Error + 'static>> {
-    let data: TspData = std::fs::read_to_string(path)?.parse()?;
-    Ok(data)
+pub fn read(path: &str) -> Result<TspData, Error> {
+    let file_content = std::fs::read_to_string(path);
+    if let Ok(content) = file_content {
+        content.parse()
+    } else {
+        Err(Error::InstanceFileNotFound)
+    }
 }
 
-fn parse_node_coord_section_line(line: &str) -> Result<Node, &'static str> {
-    let mut parsed_line: Vec<f32> = line
-        .split_whitespace()
-        .map(|s| s.parse::<f32>().expect("Node coord must be numerical"))
-        .collect();
+fn parse_node_coord_section_line(line: &str) -> Result<Node, Error> {
+    let mut splitted = line.split_whitespace();
+    let x = splitted.next();
+    let y = splitted.next();
 
-    return match parsed_line.len() {
-        2 => {
-            let y = parsed_line.pop().unwrap();
-            let x = parsed_line.pop().unwrap();
+    if let (Some(x), Some(y)) = (x, y) {
+        let parsed_x = x.parse::<f32>();
+        let parsed_y = y.parse::<f32>();
+
+        if let (Ok(x), Ok(y)) = (parsed_x, parsed_y) {
             Ok(Node::new(x, y))
+        } else {
+            Err(Error::UnparsableCoord)
         }
-        _ => Err("line too short"),
-    };
+    } else {
+        Err(Error::CoordLineTooShort)
+    }
 }
 
 #[cfg(test)]
@@ -50,7 +58,7 @@ mod tests {
 
     #[test]
     fn dj38() {
-        let data = read(&"instances/dj38.tsp").unwrap();
+        let data = read(&"instances/dj38.tsp").expect("");
         let expected_node_coords = vec![
             Node::new(11003.611100, 42102.500000),
             Node::new(11108.611100, 42373.888900),
@@ -92,5 +100,26 @@ mod tests {
             Node::new(12645.000000, 42973.333300),
         ];
         assert_eq!(data.nodes, expected_node_coords);
+    }
+
+    #[test]
+    fn file_not_found() {
+        let parsed = read(&"instances/dj39.tsp");
+        let error = parsed.err().expect("");
+        assert!(matches!(error, Error::InstanceFileNotFound))
+    }
+
+    #[test]
+    fn coord_line_too_short() {
+        let parsed = read(&"instances/dj38_coord_line_too_short.tsp");
+        let error = parsed.err().expect("");
+        assert!(matches!(error, Error::CoordLineTooShort))
+    }
+
+    #[test]
+    fn unparsable_coord() {
+        let parsed = read(&"instances/dj38_unparsable_coord.tsp");
+        let error = parsed.err().expect("");
+        assert!(matches!(error, Error::UnparsableCoord))
     }
 }
